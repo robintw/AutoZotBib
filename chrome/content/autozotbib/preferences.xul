@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin" type="text/css"?>
+
+<prefwindow
+    type="prefwindow"
+    id="azb-preferences-window"
+    title="AutoZotBib preferences"
+    xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+    persist="width height screenX screenY">
+
+  <prefpane id="autozotbib-prefpane" style="padding: 1em;">
+    <preferences>
+      <preference id="azb-bibtex-filename" name="extensions.autozotbib.bibtex_filename" type="string"/>
+    </preferences>
+    
+    <caption label="Path to the file in which the auto-exported BibTeX entries should be placed"/>
+    <textbox preference="azb-bibtex-filename" id="defaultStartupHomepageField" />
+  </prefpane>
+
+  <script src="preferences.js"/>
+
+</prefwindow>

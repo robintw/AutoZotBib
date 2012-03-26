@@ -1,0 +1,5 @@
+content	autozotbib				chrome/content/autozotbib/
+locale	autozotbib	en-US		chrome/locale/en-US/autozotbib/
+skin	autozotbib	default		chrome/skin/default/autozotbib/
+
+overlay	chrome://zotero/content/zoteroPane.xul	chrome://autozotbib/content/overlay.xul

@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://autozotbib/skin/overlay.css" type="text/css"?>
+<!DOCTYPE window SYSTEM "chrome://autozotbib/locale/hello.dtd">
+
+<overlay id="autozotbib-overlay"
+	xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+	
+	<stringbundleset id="stringbundleset">
+		<stringbundle id="hello-world-zotero-strings"
+			src="chrome://autozotbib/locale/hello.properties"/>
+	</stringbundleset>
+	
+	<menupopup id="zotero-tb-actions-popup">
+		<!-- Make sure the menu separator for utilities is visible -->
+		<menuseparator id="zotero-tb-actions-plugins-separator" hidden="false"/>
+		<menuitem id="z2b-prefs" insertbefore="zotero-tb-actions-prefs" label="AutoZotBib Preferences" oncommand="Zotero.AutoZotBib.preferences(window);"/>
+	</menupopup>
+	
+	<!-- Include the main extension logic -->
+	<script src="chrome://zotero/content/include.js"/>
+	<script src="chrome://autozotbib/content/include.js"/>
+</overlay>
