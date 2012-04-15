@@ -36,9 +36,11 @@ Zotero.AutoZotBib = {
 	
 	// Callback implementing the notify() method to pass to the Notifier
 	notifierCallback: {
-		notify: function(event, type, ids, extraData) {
+	    notify: function(event, type, ids, extraData) {
+		if (prefs.getBoolPref("automatic")) {
 			Zotero.AutoZotBib.exportAll()
 		}
+	    }
 	}
 };
 
