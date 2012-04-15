@@ -11,10 +11,12 @@
   <prefpane id="autozotbib-prefpane" style="padding: 1em;">
     <preferences>
       <preference id="azb-bibtex-filename" name="extensions.autozotbib.bibtex_filename" type="string"/>
+      <preference id="azb-automatic" name="extensions.autozotbib.automatic" type="bool"/>
     </preferences>
     
     <caption label="Path to the file in which the auto-exported BibTeX entries should be placed"/>
     <textbox preference="azb-bibtex-filename" id="defaultStartupHomepageField" />
+    <checkbox label="Automatically send to bibtex" preference="azb-automatic"/>
   </prefpane>
 
   <script src="preferences.js"/>
