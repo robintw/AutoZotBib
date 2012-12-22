@@ -31,7 +31,7 @@ Zotero.AutoZotBib = {
 	Searches for items in the Zotero database
 	with the given author and year, and returns those items.
   	*/
-  	search_for_items: function(author, year) {
+  	searchItems: function(author, year) {
   		dump("ALERT!\n");
   		var s = new Zotero.Search();
   		s.addCondition('creator', 'contains', author);
@@ -99,7 +99,7 @@ Zotero.AutoZotBib = {
 	Removes ALL entries with the given first author
 	and year from the Bibtex file specified in the preferences
 	*/
-  	removeBibtexEntry: function(author, year) {
+  	removeBibtexEntries: function(authors, years) {
 		var file = Components.classes["@mozilla.org/file/local;1"].
 	           createInstance(Components.interfaces.nsILocalFile);
 
@@ -120,9 +120,16 @@ Zotero.AutoZotBib = {
 		  // works for the final entry in the file
 		  data = data + "\n\n@REPLACETHIS"
 
-		  // Remove the BibTeX entry given as arguments to this function
-		  // by using a regexp
-		  data = data.replace(new RegExp('@[^@]+?author = \{(' + author + '),[^@]+?year = \{(' + year + ')\},[^@]+?(?=@)','g'), "")
+		  // For every author and year given, remove those from the string
+		  for (i in authors)
+		  {
+		  	dump("Removing " + authors[i] + " from BibTeX file.\n");
+		  	// Remove the BibTeX entry given as arguments to this function
+		  	// by using a regexp
+		  	data = data.replace(new RegExp('@[^@]+?author = \{(' + authors[i] + '),[^@]+?year = \{(' + years[i] + ')\}[^@]+?(?=@)','g'), "")
+		  	dump(data);
+		  	dump("\n\n\n\n\n\n");
+		  }
 
 		  // Remove the @REPLACETHIS bit as it is invalid BibTex!
 		  data = data.replace('@REPLACETHIS', '')
