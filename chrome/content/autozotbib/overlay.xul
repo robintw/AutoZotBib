@@ -16,6 +16,7 @@
 		<menuseparator id="zotero-tb-actions-plugins-separator2" insertbefore="zotero-tb-actions-prefs" hidden="false"/>
 		<menuitem id="z2b-prefs" label="AutoZotBib Preferences" insertbefore="zotero-tb-actions-plugins-separator2" oncommand="Zotero.AutoZotBib.preferences(window);"/>
 		<menuitem id="z2b-manual" label="AutoZotBib Manual export" insertbefore="zotero-tb-actions-plugins-separator2" oncommand="Zotero.AutoZotBib.exportAll();"/>
+		<menuitem id="z2b-test" label="AutoZotBib TEST" insertbefore="zotero-tb-actions-plugins-separator2" oncommand="Zotero.AutoZotBib.search_for_items();"/>
 	</menupopup>
 	
 	<!-- Include the main extension logic -->
