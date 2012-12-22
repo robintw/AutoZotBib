@@ -70,7 +70,8 @@ Zotero.AutoZotBib = {
 			var data = obj.string;
 
 			var file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-			file.initWithPath("~/AppendTo.txt");
+			var filename = prefs.getCharPref("bibtex_filename");
+			file.initWithPath(filename);
 
 			// You can also optionally pass a flags parameter here. It defaults to
 			// FileUtils.MODE_WRONLY | FileUtils.MODE_CREATE | FileUtils.MODE_TRUNCATE;
@@ -89,7 +90,7 @@ Zotero.AutoZotBib = {
 			  }
 			 
 			  // Data has been written to the file.
-			  alert("Written!");
+			  dump("Written to file!");
 			});
 		}
 	},
@@ -102,7 +103,8 @@ Zotero.AutoZotBib = {
 		var file = Components.classes["@mozilla.org/file/local;1"].
 	           createInstance(Components.interfaces.nsILocalFile);
 
-		file.initWithPath("/Users/robin/testzot.bib");
+	    var filename = prefs.getCharPref("bibtex_filename");
+		file.initWithPath(filename);
 
 		NetUtil.asyncFetch(file, function(inputStream, status) {
 		  if (!Components.isSuccessCode(status)) {
