@@ -98,17 +98,15 @@ Zotero.AutoZotBib = {
   	},
 	
   	processQueue: function() {
-  		ids = this.uniqueElements(events_id);
-
-  		//dump("IDs to process = \t");
-  		//dump(ids);
-  		//dump("\n");
-  		return(ids);
+  		events_id = events_id.map(function(x) {return Number(x);});
+  		unique_ids = this.uniqueElements(events_id);
+  		dump("\n\nThe unique_ids are:\t" + unique_ids.join(";  ") + "\n\n" );
+  		return(unique_ids);
   	},
 
   	/*
 	Searches for items in the Zotero database
-	with the given author and year, and returns those items.
+	with the given author and year, and returns the ids of those items
   	*/
   	searchItems: function(author, year) {
   		var s = new Zotero.Search();
@@ -117,9 +115,10 @@ Zotero.AutoZotBib = {
 
   		var results = s.search();
 
-  		var items = Zotero.Items.get(results);
+  		//var items = Zotero.Items.get(results);
+  		//return(items);
 
-  		return(items);
+  		return(results);
   	},
 
   	/*
@@ -129,6 +128,7 @@ Zotero.AutoZotBib = {
 	appendItemsToFile: function(items) {
 		dump("In append to file. Items = \n");
 		dump(items);
+
 		var translation = new Zotero.Translate.Export();
 		translation.setItems(items);
 		trans_guid = prefs.getCharPref("bibtex_translator_guid");
@@ -297,7 +297,7 @@ Zotero.AutoZotBib = {
 		for (i in ids)
 		{
 			// Get the item
-			var item = Zotero.Items.get(Number(ids[i]));
+			var item = Zotero.Items.get(ids[i]);
 			// Get the author
 			var creators = item.getCreators();
 			authors.push(creators[0].ref.lastName);
@@ -332,6 +332,11 @@ Zotero.AutoZotBib = {
 
 			var results = this.searchItems(author, year);
 
+			if (results == false)
+			{
+				continue;
+			}
+
 			search_results = search_results.concat(results);
 		}
 
@@ -339,6 +344,11 @@ Zotero.AutoZotBib = {
 
 		dump("All search results are:\n");
 		dump(search_results);
+
+		if (search_results.length == 0)
+		{
+			return;
+		}
 
 		if (okToWriteToBibtex)
 		{
@@ -381,7 +391,16 @@ Zotero.AutoZotBib = {
 		{
 			events_timestamp.push(secs);
 			events_type.push(event);
-			events_id.push(ids);
+
+			if (ids.length > 1)
+			{
+				events_id.concat(ids);
+			}
+			else
+			{
+				events_id.push(ids);
+			}
+			
 
 			// dump(secs);
 			// dump(":\t");	
