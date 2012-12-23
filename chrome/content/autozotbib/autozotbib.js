@@ -13,13 +13,70 @@ var events_timestamp = [];
 var okToWriteToBibtex = true;
 var needToAppendStill = false;
 
+var lastTimestamp;
+var timerRunning = false;
+
+
+const TYPE_REPEATING_PRECISE_CAN_SKIP = Components.interfaces.nsITimer.TYPE_REPEATING_PRECISE_CAN_SKIP;
+
+const DIFF_DO_NOTHING = 1;
+const DIFF_CLEAR_QUEUE = 5;
+const DIFF_STOP_TIMER = 20;
+
+// we need an nsITimerCallback compatible...
+// ... interface for the callbacks.
+var timerEvent = {
+  queueEmpty: function() {
+  	if (events_timestamp.length == 0)
+  	{
+  		return(true);
+  	}
+  	else
+  	{
+  		return(false);
+  	}
+  },
+
+  observe: function(subject, topic, data) {
+  	if (events_timestamp.length > 0)
+  	{
+  		lastTimestamp = events_timestamp[events_timestamp.length - 1];
+  	}
+    currentTimestamp = new Date().getTime() / 1000;
+
+    diff = currentTimestamp - lastTimestamp;
+    dump("Fired timer\tCurrent: " + currentTimestamp + "\tLast: " + lastTimestamp + "\tDiff: " + diff + "\n");
+    if (diff < DIFF_DO_NOTHING)
+    {
+    	return;
+    }
+    if (diff > DIFF_CLEAR_QUEUE && diff < DIFF_STOP_TIMER && this.queueEmpty() == false)
+    {
+    	// Process queue, clear queue and process items
+    	dump("Clearing queue\n");
+    	events_id.length = 0;
+    	events_type.length = 0;
+    	events_timestamp.length = 0;
+    }
+    if (diff > DIFF_STOP_TIMER)
+    {
+    	// Stop timer
+    	dump("Stopping timer\n");
+    	Zotero.AutoZotBib.timer.cancel();
+    	timerRunning = false;
+    }
+  }
+}
+
 var search_results = [];
 
-Zotero.AutoZotBib = {	
+Zotero.AutoZotBib = {
+	timer: Components.classes["@mozilla.org/timer;1"].createInstance(Components.interfaces.nsITimer),
+
 	init: function () {		
 		// Register the callback in Zotero as an item observer
 		var notifierID = Zotero.Notifier.registerObserver(this.notifierCallback, ['item']);
-		
+
 		// Unregister callback when the window closes (important to avoid a memory leak)
 		window.addEventListener('unload', function(e) {
 				Zotero.Notifier.unregisterObserver(notifierID);
@@ -31,7 +88,7 @@ Zotero.AutoZotBib = {
     	if (! prefs_window_ref || prefs_window_ref.closed) prefs_window_ref = w.open("chrome://autozotbib/content/preferences.xul", "", "centerscreen,chrome,dialog,resizable");
     	else prefs_window_ref.focus();
   	},
-
+	  
   	/*
 	Searches for items in the Zotero database
 	with the given author and year, and returns those items.
@@ -329,10 +386,12 @@ Zotero.AutoZotBib = {
 			dump("\n");
 		}
 		
+		if (timerRunning == false)
+		{
+			Zotero.AutoZotBib.timer.init(timerEvent, 1000, TYPE_REPEATING_PRECISE_CAN_SKIP);
+			timerRunning = true;
+		}
 
-
-
-		
 	    }
 	}
 };
