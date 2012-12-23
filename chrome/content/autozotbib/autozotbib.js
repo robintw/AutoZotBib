@@ -10,6 +10,11 @@ var events_id = [];
 var events_type = [];
 var events_timestamp = [];
 
+var okToWriteToBibtex = true;
+var needToAppendStill = false;
+
+var search_results = [];
+
 Zotero.AutoZotBib = {	
 	init: function () {		
 		// Register the callback in Zotero as an item observer
@@ -32,16 +37,13 @@ Zotero.AutoZotBib = {
 	with the given author and year, and returns those items.
   	*/
   	searchItems: function(author, year) {
-  		dump("ALERT!\n");
   		var s = new Zotero.Search();
   		s.addCondition('creator', 'contains', author);
   		s.addCondition('year', 'contains', year);
 
   		var results = s.search();
 
-  		dump(results);
   		var items = Zotero.Items.get(results);
-  		dump("Got items\n");
 
   		return(items);
   	},
@@ -51,6 +53,8 @@ Zotero.AutoZotBib = {
   	the output file (as configured in the preferences)
   	*/
 	appendItemsToFile: function(items) {
+		dump("In append to file. Items = \n");
+		dump(items);
 		var translation = new Zotero.Translate.Export();
 		translation.setItems(items);
 		trans_guid = prefs.getCharPref("bibtex_translator_guid");
@@ -90,7 +94,7 @@ Zotero.AutoZotBib = {
 			  }
 			 
 			  // Data has been written to the file.
-			  dump("Written to file!");
+			  dump("Data has been appended to the file.");
 			});
 		}
 	},
@@ -100,11 +104,13 @@ Zotero.AutoZotBib = {
 	and year from the Bibtex file specified in the preferences
 	*/
   	removeBibtexEntries: function(authors, years) {
+  		okToWriteToBibtex = false;
 		var file = Components.classes["@mozilla.org/file/local;1"].
 	           createInstance(Components.interfaces.nsILocalFile);
 
 	    var filename = prefs.getCharPref("bibtex_filename");
 		file.initWithPath(filename);
+
 
 		NetUtil.asyncFetch(file, function(inputStream, status) {
 		  if (!Components.isSuccessCode(status)) {
@@ -123,12 +129,9 @@ Zotero.AutoZotBib = {
 		  // For every author and year given, remove those from the string
 		  for (i in authors)
 		  {
-		  	dump("Removing " + authors[i] + " from BibTeX file.\n");
 		  	// Remove the BibTeX entry given as arguments to this function
 		  	// by using a regexp
 		  	data = data.replace(new RegExp('@[^@]+?author = \{(' + authors[i] + '),[^@]+?year = \{(' + years[i] + ')\}[^@]+?(?=@)','g'), "")
-		  	dump(data);
-		  	dump("\n\n\n\n\n\n");
 		  }
 
 		  // Remove the @REPLACETHIS bit as it is invalid BibTex!
@@ -152,7 +155,16 @@ Zotero.AutoZotBib = {
 		    }
 		 
 		  // Data has been written to the file.
-		  dump("All data written!!!!!\n");
+		  dump("BibTeX entries have been removed.\n");
+
+		  if (needToAppendStill)
+		  {
+		  	// Export all of the entries that we found in the search and
+			// append to the file
+			dump("\nAbout to append items to file.\n");
+			Zotero.AutoZotBib.appendItemsToFile(search_results);
+		  }
+		  okToWriteToBibtex = true;
 		});
 		});
 	},
@@ -179,6 +191,26 @@ Zotero.AutoZotBib = {
 
 		this.exportItems(all_items, filename);
   	},
+
+  	// Returns just the unique elements from the array
+  	// Taken from http://net.tutsplus.com/tutorials/javascript-ajax/javascript-from-null-utility-functions-and-debugging/
+  	uniqueElements: function(origArr) {
+    var newArr = [],
+        origLen = origArr.length,
+        found,
+        x, y;
+    for ( x = 0; x < origLen; x++ ) {
+        found = undefined;
+        for ( y = 0; y < newArr.length; y++ ) {
+            if ( origArr[x] === newArr[y] ) {
+              found = true;
+              break;
+            }
+        }
+        if ( !found) newArr.push( origArr[x] );
+    }
+   return newArr;
+   },
 	
 	processItems: function(ids) {
 		// Processes items that have changed (add/modify/delete)
@@ -190,15 +222,15 @@ Zotero.AutoZotBib = {
 		for (i in ids)
 		{
 			// Get the item
-			item = Zotero.Items.get(ids[i]);
+			var item = Zotero.Items.get(ids[i]);
 
 			// Get the author
-			creators = item.getCreators();
+			var creators = item.getCreators();
 			authors.push(creators[0].ref.lastName);
 
 			// Get the year
-			date_str = item.getField('date');
-			date_obj = Zotero.Date.strToDate(date_str);
+			var date_str = item.getField('date');
+			var date_obj = Zotero.Date.strToDate(date_str);
 			years.push(date_obj.year);
 		}
 
@@ -210,13 +242,43 @@ Zotero.AutoZotBib = {
 		// We can call removeBibtexEntries with a list of authors and list of years
 		// and it will do it for all of them (more efficient than reading/writing
 		// file many times).
+		dump("About to remove entries\n");
+		this.removeBibtexEntries(authors, years);
+		dump("Removed entries\n");
 
 		// Search Zotero library for items with those authors and years
 		// (each call to searchItems does it for one author/year combo,
 		// run many times and join results - then remove any duplicates)
+		
+		
+		for (i in authors)
+		{
+			var author = authors[i];
+			var year = years[i];
 
-		// Export all of the entries that we found in the search and
-		// append to the file
+			var results = this.searchItems(author, year);
+
+			search_results = search_results.concat(results);
+		}
+
+		search_results = this.uniqueElements(search_results);
+
+		dump("All search results are:\n");
+		dump(search_results);
+
+		if (okToWriteToBibtex)
+		{
+			// Export all of the entries that we found in the search and
+			// append to the file
+			dump("\nAbout to append items to file.\n");
+			this.appendItemsToFile(search_results);
+		}
+		else
+		{
+			needToAppendStill = true;
+		}
+
+		
 	},
 
 	// Callback implementing the notify() method to pass to the Notifier
