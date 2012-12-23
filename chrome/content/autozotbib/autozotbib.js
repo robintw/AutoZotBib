@@ -183,16 +183,37 @@ Zotero.AutoZotBib = {
 	processItems: function(ids) {
 		// Processes items that have changed (add/modify/delete)
 
+		var authors = [];
+		var years = [];
+
 		// Get authors and years from the ids
+		for (i in ids)
+		{
+			// Get the item
+			item = Zotero.Items.get(ids[i]);
+
+			// Get the author
+			creators = item.getCreators();
+			authors.push(creators[0].ref.lastName);
+
+			// Get the year
+			date_str = item.getField('date');
+			date_obj = Zotero.Date.strToDate(date_str);
+			years.push(date_obj.year);
+		}
+
+		dump(authors);
+		dump("\n");
+		dump(years);
+
+		// Remove all entries with these authors and years from the BibTeX file
+		// We can call removeBibtexEntries with a list of authors and list of years
+		// and it will do it for all of them (more efficient than reading/writing
+		// file many times).
 
 		// Search Zotero library for items with those authors and years
 		// (each call to searchItems does it for one author/year combo,
 		// run many times and join results - then remove any duplicates)
-
-		// Remove all entries with these authors and years from the BibTeX file
-		// We can call removeBibtexEntries with a list of authors and list of years
-		// and it will do it for all of them (more efficient than reading/writing file
-		// many times).
 
 		// Export all of the entries that we found in the search and
 		// append to the file
