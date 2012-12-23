@@ -53,10 +53,18 @@ var timerEvent = {
     if (diff > DIFF_CLEAR_QUEUE && diff < DIFF_STOP_TIMER && this.queueEmpty() == false)
     {
     	// Process queue, clear queue and process items
+    	var ids = Zotero.AutoZotBib.processQueue();
+
     	dump("Clearing queue\n");
     	events_id.length = 0;
     	events_type.length = 0;
     	events_timestamp.length = 0;
+
+    	dump("About to process items:\t");
+    	dump(ids);
+    	dump("\n");
+    	dump("----------------------------------------------------------------\n");
+    	Zotero.AutoZotBib.processItems(ids);
     }
     if (diff > DIFF_STOP_TIMER)
     {
@@ -88,7 +96,16 @@ Zotero.AutoZotBib = {
     	if (! prefs_window_ref || prefs_window_ref.closed) prefs_window_ref = w.open("chrome://autozotbib/content/preferences.xul", "", "centerscreen,chrome,dialog,resizable");
     	else prefs_window_ref.focus();
   	},
-	  
+	
+  	processQueue: function() {
+  		ids = this.uniqueElements(events_id);
+
+  		//dump("IDs to process = \t");
+  		//dump(ids);
+  		//dump("\n");
+  		return(ids);
+  	},
+
   	/*
 	Searches for items in the Zotero database
 	with the given author and year, and returns those items.
@@ -271,16 +288,16 @@ Zotero.AutoZotBib = {
 	
 	processItems: function(ids) {
 		// Processes items that have changed (add/modify/delete)
-
+		dump("In processItems\n");
 		var authors = [];
 		var years = [];
 
+		dump(ids);
 		// Get authors and years from the ids
 		for (i in ids)
 		{
 			// Get the item
-			var item = Zotero.Items.get(ids[i]);
-
+			var item = Zotero.Items.get(Number(ids[i]));
 			// Get the author
 			var creators = item.getCreators();
 			authors.push(creators[0].ref.lastName);
