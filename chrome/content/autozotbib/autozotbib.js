@@ -23,6 +23,24 @@ const DIFF_DO_NOTHING = 1;
 const DIFF_CLEAR_QUEUE = 5;
 const DIFF_STOP_TIMER = 20;
 
+var prefsEvent = {
+	observe: function(subject, topic, data) {
+     if (topic != "nsPref:changed")
+     {
+       return;
+     }
+
+     //dump(subject + "\t" + topic + "\t" + data + "\n");
+     if (data == "bibtex_filename")
+     {
+     	// The filename we should export to has changed
+     	// Thus we need to do a full export - so that we can then add/remove
+     	// things from it.
+     	Zotero.AutoZotBib.exportAll();
+     }
+	}
+}
+
 // we need an nsITimerCallback compatible...
 // ... interface for the callbacks.
 var timerEvent = {
@@ -89,6 +107,23 @@ Zotero.AutoZotBib = {
 		window.addEventListener('unload', function(e) {
 				Zotero.Notifier.unregisterObserver(notifierID);
 		}, false);
+
+		Zotero.addShutdownListener(this.onShutdown);
+
+
+		prefs.QueryInterface(Components.interfaces.nsIPrefBranch2);
+		prefs.addObserver("", prefsEvent, false);
+	},
+
+	onShutdown: function() {
+		dump("\n######## We're about to shutdown - clear queue and process.\n\n");
+		// If Zotero shuts down we need to clear the queue
+		// and process it all - regardless of the timer
+		var ids = Zotero.AutoZotBib.processQueue();
+		events_id.length = 0;
+    	events_type.length = 0;
+    	events_timestamp.length = 0;
+    	Zotero.AutoZotBib.processItems(ids);
 	},
 
 	
@@ -97,10 +132,20 @@ Zotero.AutoZotBib = {
     	else prefs_window_ref.focus();
   	},
 	
+	/* Process the queue of events
+	and decide which item IDs should be processed
+	*/
   	processQueue: function() {
+  		// Very simple (but effective - I think) way of doing it
+  		// at the moment just selects unique itemIDs from those in the
+  		// queue.
+
+  		// First ensure all itemIDs are numbers (some weren't for some reason)
   		events_id = events_id.map(function(x) {return Number(x);});
+
+  		// Get the unique ones
   		unique_ids = this.uniqueElements(events_id);
-  		dump("\n\nThe unique_ids are:\t" + unique_ids.join(";  ") + "\n\n" );
+
   		return(unique_ids);
   	},
 
@@ -114,9 +159,6 @@ Zotero.AutoZotBib = {
   		s.addCondition('year', 'contains', year);
 
   		var results = s.search();
-
-  		//var items = Zotero.Items.get(results);
-  		//return(items);
 
   		return(results);
   	},
@@ -147,6 +189,7 @@ Zotero.AutoZotBib = {
 	*/
 	_appendToFileCallback: function(obj, worked) {
 		if(!worked) {
+			dump("Error exporting items to BibTeX.\n");
 			window.alert("Error exporting items to BibTeX.");
 		} else {
 			var data = obj.string;
@@ -408,18 +451,6 @@ Zotero.AutoZotBib = {
 			{
 				events_id.push(ids);
 			}
-			
-
-			// dump(secs);
-			// dump(":\t");	
-			// dump(event);
-			// dump("\t");
-			// dump(type);
-			// dump("\t");
-			// dump(ids);
-			// dump("\t");
-			// dump(extraData);
-			// dump("\n------------\n\n");
 
 			dump(events_timestamp.join());
 			dump("\n");
