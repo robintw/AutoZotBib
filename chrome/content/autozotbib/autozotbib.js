@@ -31,12 +31,26 @@ var prefsEvent = {
      }
 
      //dump(subject + "\t" + topic + "\t" + data + "\n");
-     if (data == "bibtex_filename")
+     switch (data)
      {
-     	// The filename we should export to has changed
-     	// Thus we need to do a full export - so that we can then add/remove
-     	// things from it.
-     	Zotero.AutoZotBib.exportAll();
+     	case "bibtex_filename":
+	     	// The filename we should export to has changed
+	     	// Thus we need to do a full export - so that we can then add/remove
+	     	// things from it.
+	     	// (but only if we're in automatic mode - otherwise we shouldn't touch it!)
+	     	if (prefs.getBoolPref('automatic'))
+	     	{
+	     		Zotero.AutoZotBib.exportAll();
+	     	}
+	     	break;
+	    case "automatic":
+	    	// If we have just switched the automatic mode on
+	    	// then do a full export - as we don't know what
+	    	// happened while it was off!
+	    	if (prefs.getBoolPref('automatic'))
+	    	{
+	    		Zotero.AutoZotBib.exportAll();
+	    	}
      }
 	}
 }
@@ -125,7 +139,6 @@ Zotero.AutoZotBib = {
     	events_timestamp.length = 0;
     	Zotero.AutoZotBib.processItems(ids);
 	},
-
 	
 	preferences: function(w) {
     	if (! prefs_window_ref || prefs_window_ref.closed) prefs_window_ref = w.open("chrome://autozotbib/content/preferences.xul", "", "centerscreen,chrome,dialog,resizable");
