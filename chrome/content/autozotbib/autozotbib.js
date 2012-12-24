@@ -122,12 +122,16 @@ Zotero.AutoZotBib = {
   	},
 
   	/*
-  	Appends the given list of items (that is, full items, not item IDs) to
+  	Appends the items from the given list of item IDs
+  	(IDs not full items) to
   	the output file (as configured in the preferences)
   	*/
-	appendItemsToFile: function(items) {
-		dump("In append to file. Items = \n");
-		dump(items);
+	appendItemsToFile: function(ids) {
+		dump("In append to file. Items = \t");
+		dump(ids);
+		dump("\n");
+
+		items = Zotero.Items.get(ids);
 
 		var translation = new Zotero.Translate.Export();
 		translation.setItems(items);
