@@ -15,7 +15,10 @@
     </preferences>
     
     <caption label="Path to the file in which the auto-exported BibTeX entries should be placed"/>
-    <textbox preference="azb-bibtex-filename" id="defaultStartupHomepageField" />
+    <hbox  style="margin: 0"  align="center">
+    <textbox preference="azb-bibtex-filename" flex="1" id="defaultStartupHomepageField" />
+    <button id="azb-choose-file" label="Choose" oncommand="var file=chooseFile(); if(file!='') {prefs.setCharPref('bibtex_filename',file);}"/>
+    </hbox>
     <checkbox label="Automatically send to bibtex" preference="azb-automatic"/>
   </prefpane>
 
