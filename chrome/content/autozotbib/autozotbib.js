@@ -372,10 +372,14 @@ Zotero.AutoZotBib = {
 	// Callback implementing the notify() method to pass to the Notifier
 	notifierCallback: {
 	    notify: function(event, type, ids, extraData) {
-		//if (prefs.getBoolPref("automatic")) {
-		//	Zotero.AutoZotBib.exportAll()
-		//}
 
+		if (prefs.getBoolPref("automatic") == false || prefs.getCharPref("bibtex_filename") == "")
+		{
+			return;
+		}
+
+		// Remove items that aren't regular items (eg. attachments etc)
+		// from the list of ids given to us.
 		for (i in ids)
 		{
 			var item = Zotero.Items.get(ids[i]);
