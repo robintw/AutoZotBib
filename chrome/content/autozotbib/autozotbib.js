@@ -199,14 +199,15 @@ Zotero.AutoZotBib = {
 	which actually does the writing
 	*/
 	_appendToFileCallback: function(obj, worked) {
+
 		if(!worked) {
 			dump("Error exporting items to BibTeX.\n");
-			window.alert("Error exporting items to BibTeX.");
+			window.alert("Error exporting items to BibTeX.\n");
 		} else {
 			var bibtexString = obj.string;
 
 			var file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-			var filename = this.prefs.getCharPref("bibtex_filename");
+			var filename = Zotero.AutoZotBib.prefs.getCharPref("bibtex_filename");
 			file.initWithPath(filename);
 
 			// You can also optionally pass a flags parameter here. It defaults to
@@ -226,7 +227,7 @@ Zotero.AutoZotBib = {
 			  }
 			 
 			  // Data has been written to the file.
-			  dump("Data has been appended to the file.");
+			  dump("Data has been appended to the file.\n");
 			});
 		}
 	},
@@ -287,14 +288,18 @@ Zotero.AutoZotBib = {
 		    }
 		 
 		  // Data has been written to the file.
-		  dump("BibTeX entries have been removed.\n");
+		  dump("BibTeX entries have been removed. Value of ntas is:\t");
+		  dump(Zotero.AutoZotBib.needToAppendStill);
+		  dump("\n");
 
-		  if (this.needToAppendStill)
+		  if (Zotero.AutoZotBib.needToAppendStill == true)
 		  {
+		  	dump("Need to append still is true!")
 		  	// Export all of the entries that we found in the search and
 			// append to the file
-			dump("\nAbout to append items to file.\n");
-			Zotero.AutoZotBib.appendItemsToFile(this.search_results);
+			dump("LATER ON Appending items to file.\n");
+			Zotero.AutoZotBib.appendItemsToFile(Zotero.AutoZotBib.search_results);
+			Zotero.AutoZotBib.needToAppendStill = false;
 		  }
 		  this.okToWriteToBibtex = true;
 		});
@@ -350,7 +355,9 @@ Zotero.AutoZotBib = {
 		var authors = [];
 		var years = [];
 
+		dump("IDs:\t");
 		dump(ids);
+		dump("\n");
 		// Get authors and years from the ids
 		for (i in ids)
 		{
@@ -374,15 +381,12 @@ Zotero.AutoZotBib = {
 		// We can call removeBibtexEntries with a list of authors and list of years
 		// and it will do it for all of them (more efficient than reading/writing
 		// file many times).
-		dump("About to remove entries\n");
+		dump("Calling removeBibtexEntries\n");
 		this.removeBibtexEntries(authors, years);
-		dump("Removed entries\n");
 
 		// Search Zotero library for items with those authors and years
 		// (each call to searchItems does it for one author/year combo,
-		// run many times and join results - then remove any duplicates)
-		
-		
+		// run many times and join results - then remove any duplicates)		
 		for (i in authors)
 		{
 			var author = authors[i];
@@ -400,11 +404,13 @@ Zotero.AutoZotBib = {
 
 		this.search_results = this.uniqueElements(this.search_results);
 
-		dump("All search results are:\n");
+		dump("All search results are:\t");
 		dump(this.search_results);
+		dump("\n");
 
 		if (this.search_results.length == 0)
 		{
+			dump("## No search results, therefore nothing to add.")
 			return;
 		}
 
@@ -412,12 +418,17 @@ Zotero.AutoZotBib = {
 		{
 			// Export all of the entries that we found in the search and
 			// append to the file
-			dump("\nAbout to append items to file.\n");
+			dump("It's ok to write to the file\n");
+			dump("About to append items to file.\n");
 			this.appendItemsToFile(this.search_results);
 		}
 		else
 		{
+			dump("NOT ok to write to the file. Will do later.\n")
 			this.needToAppendStill = true;
+			dump("The value of needToAppendStill is:\t");
+			dump(Zotero.AutoZotBib.needToAppendStill);
+			dump("\n");
 		}
 
 		
