@@ -1,6 +1,11 @@
 Components.utils.import("resource://gre/modules/NetUtil.jsm");
 Components.utils.import("resource://gre/modules/FileUtils.jsm");
 
+function dp(s)
+{
+	dump(s);
+}
+
 var prefsEvent = {
 	observe: function(subject, topic, data) {
      if (topic != "nsPref:changed")
@@ -8,7 +13,7 @@ var prefsEvent = {
        return;
      }
 
-     //Zotero.debug(subject + "\t" + topic + "\t" + data + "\n");
+     //dp(subject + "\t" + topic + "\t" + data + "\n");
      switch (data)
      {
      	case "bibtex_filename":
@@ -55,7 +60,7 @@ var timerEvent = {
     currentTimestamp = new Date().getTime() / 1000;
 
     diff = currentTimestamp - Zotero.AutoZotBib.lastTimestamp;
-    Zotero.debug("Fired timer\tCurrent: " + currentTimestamp + "\tLast: " + Zotero.AutoZotBib.lastTimestamp + "\tDiff: " + diff + "\n");
+    dp("Fired timer\tCurrent: " + currentTimestamp + "\tLast: " + Zotero.AutoZotBib.lastTimestamp + "\tDiff: " + diff + "\n");
     if (diff < Zotero.AutoZotBib.DIFF_DO_NOTHING)
     {
     	return;
@@ -65,21 +70,21 @@ var timerEvent = {
     	// Process queue, clear queue and process items
     	var ids = Zotero.AutoZotBib.processQueue();
 
-    	Zotero.debug("Clearing queue\n");
+    	dp("Clearing queue\n");
     	Zotero.AutoZotBib.events_id.length = 0;
     	Zotero.AutoZotBib.events_type.length = 0;
     	Zotero.AutoZotBib.events_timestamp.length = 0;
 
-    	Zotero.debug("About to process items:\t");
-    	Zotero.debug(ids);
-    	Zotero.debug("\n");
-    	Zotero.debug("----------------------------------------------------------------\n");
+    	dp("About to process items:\t");
+    	dp(ids);
+    	dp("\n");
+    	dp("----------------------------------------------------------------\n");
     	Zotero.AutoZotBib.processItems(ids);
     }
     if (diff > Zotero.AutoZotBib.DIFF_STOP_TIMER)
     {
     	// Stop timer
-    	Zotero.debug("Stopping timer\n");
+    	dp("Stopping timer\n");
     	Zotero.AutoZotBib.timer.cancel();
     	Zotero.AutoZotBib.timerRunning = false;
     }
@@ -128,7 +133,7 @@ Zotero.AutoZotBib = {
 	},
 
 	onShutdown: function() {
-		Zotero.debug("\n######## We're about to shutdown - clear queue and process.\n\n");
+		dp("\n######## We're about to shutdown - clear queue and process.\n\n");
 		// If Zotero shuts down we need to clear the queue
 		// and process it all - regardless of the timer
 		var ids = Zotero.AutoZotBib.processQueue();
@@ -180,9 +185,9 @@ Zotero.AutoZotBib = {
   	the output file (as configured in the preferences)
   	*/
 	appendItemsToFile: function(ids) {
-		Zotero.debug("In append to file. Items = \t");
-		Zotero.debug(ids);
-		Zotero.debug("\n");
+		dp("In append to file. Items = \t");
+		dp(ids);
+		dp("\n");
 
 		items = Zotero.Items.get(ids);
 
@@ -201,7 +206,7 @@ Zotero.AutoZotBib = {
 	_appendToFileCallback: function(obj, worked) {
 
 		if(!worked) {
-			Zotero.debug("Error exporting items to BibTeX.\n");
+			dp("Error exporting items to BibTeX.\n");
 			window.alert("Error exporting items to BibTeX.\n");
 		} else {
 			var bibtexString = obj.string;
@@ -227,7 +232,7 @@ Zotero.AutoZotBib = {
 			  }
 			 
 			  // Data has been written to the file.
-			  Zotero.debug("Data has been appended to the file.\n");
+			  dp("Data has been appended to the file.\n");
 			});
 		}
 	},
@@ -248,7 +253,7 @@ Zotero.AutoZotBib = {
 		NetUtil.asyncFetch(file, function(inputStream, status) {
 		  if (!Components.isSuccessCode(status)) {
 		    // Handle error!
-		    Zotero.debug("Error in reading file!\n");
+		    dp("Error in reading file!\n");
 		    return;
 		  }
 		  // Read file into a string variable called data
@@ -283,21 +288,21 @@ Zotero.AutoZotBib = {
 		  NetUtil.asyncCopy(istream, ostream, function(status) {
 		    if (!Components.isSuccessCode(status)) {
 		      // Handle error!
-		      Zotero.debug("Error writing file.\n")
+		      dp("Error writing file.\n")
 		      return;
 		    }
 		 
 		  // Data has been written to the file.
-		  Zotero.debug("BibTeX entries have been removed. Value of ntas is:\t");
-		  Zotero.debug(Zotero.AutoZotBib.needToAppendStill);
-		  Zotero.debug("\n");
+		  dp("BibTeX entries have been removed. Value of ntas is:\t");
+		  dp(Zotero.AutoZotBib.needToAppendStill);
+		  dp("\n");
 
 		  if (Zotero.AutoZotBib.needToAppendStill == true)
 		  {
-		  	Zotero.debug("Need to append still is true!")
+		  	dp("Need to append still is true!")
 		  	// Export all of the entries that we found in the search and
 			// append to the file
-			Zotero.debug("LATER ON Appending items to file.\n");
+			dp("LATER ON Appending items to file.\n");
 			Zotero.AutoZotBib.appendItemsToFile(Zotero.AutoZotBib.search_results);
 			Zotero.AutoZotBib.needToAppendStill = false;
 			Zotero.AutoZotBib.search_results.length = 0;
@@ -308,8 +313,8 @@ Zotero.AutoZotBib = {
 	},
 
 	exportItems: function(items, filename) {
-		Zotero.debug("In exportItems\n");
-		Zotero.debug(items);
+		dp("In exportItems\n");
+		dp(items);
 
 		var file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
 		file.initWithPath(filename);
@@ -352,13 +357,13 @@ Zotero.AutoZotBib = {
 	
 	processItems: function(ids) {
 		// Processes items that have changed (add/modify/delete)
-		Zotero.debug("In processItems\n");
+		dp("In processItems\n");
 		var authors = [];
 		var years = [];
 
-		Zotero.debug("IDs:\t");
-		Zotero.debug(ids);
-		Zotero.debug("\n");
+		dp("IDs:\t");
+		dp(ids);
+		dp("\n");
 		// Get authors and years from the ids
 		for (i in ids)
 		{
@@ -374,15 +379,15 @@ Zotero.AutoZotBib = {
 			years.push(date_obj.year);
 		}
 
-		Zotero.debug(authors);
-		Zotero.debug("\n");
-		Zotero.debug(years);
+		dp(authors);
+		dp("\n");
+		dp(years);
 
 		// Remove all entries with these authors and years from the BibTeX file
 		// We can call removeBibtexEntries with a list of authors and list of years
 		// and it will do it for all of them (more efficient than reading/writing
 		// file many times).
-		Zotero.debug("Calling removeBibtexEntries\n");
+		dp("Calling removeBibtexEntries\n");
 		this.removeBibtexEntries(authors, years);
 
 		// Search Zotero library for items with those authors and years
@@ -405,13 +410,13 @@ Zotero.AutoZotBib = {
 
 		this.search_results = this.uniqueElements(this.search_results);
 
-		Zotero.debug("All search results are:\t");
-		Zotero.debug(this.search_results);
-		Zotero.debug("\n");
+		dp("All search results are:\t");
+		dp(this.search_results);
+		dp("\n");
 
 		if (this.search_results.length == 0)
 		{
-			Zotero.debug("## No search results, therefore nothing to add.")
+			dp("## No search results, therefore nothing to add.")
 			return;
 		}
 
@@ -419,18 +424,18 @@ Zotero.AutoZotBib = {
 		{
 			// Export all of the entries that we found in the search and
 			// append to the file
-			Zotero.debug("It's ok to write to the file\n");
-			Zotero.debug("About to append items to file.\n");
+			dp("It's ok to write to the file\n");
+			dp("About to append items to file.\n");
 			this.appendItemsToFile(this.search_results);
 			this.search_results.length = 0;
 		}
 		else
 		{
-			Zotero.debug("NOT ok to write to the file. Will do later.\n")
+			dp("NOT ok to write to the file. Will do later.\n")
 			this.needToAppendStill = true;
-			Zotero.debug("The value of needToAppendStill is:\t");
-			Zotero.debug(Zotero.AutoZotBib.needToAppendStill);
-			Zotero.debug("\n");
+			dp("The value of needToAppendStill is:\t");
+			dp(Zotero.AutoZotBib.needToAppendStill);
+			dp("\n");
 		}
 
 		
@@ -440,7 +445,7 @@ Zotero.AutoZotBib = {
 	notifierCallback: {
 	    notify: function(event, type, ids, extraData) {
 
-		if (Zotero.AutoZotBib.prefs.getBoolPref("automatic") == false || Zotero.AutoZotBib.prefs.getCharPref("bibtex_filename") == "")
+		if (Zotero.AutoZotBib.prefs.getBoolPref("automatic") == false || Zotero.AutoZotBib.prefs.getCharPref("bibtex_filename") == "" || type != "item")
 		{
 			return;
 		}
@@ -462,7 +467,7 @@ Zotero.AutoZotBib = {
 		// deleted in the loop above
 		// AND
 		// we are dealing with a item (we don't care about collections, tags etc)
-		if (ids.length > 0 && type == 'item')
+		if (ids.length > 0)
 		{
 			Zotero.AutoZotBib.events_timestamp.push(secs);
 			Zotero.AutoZotBib.events_type.push(event);
@@ -476,13 +481,15 @@ Zotero.AutoZotBib = {
 				Zotero.AutoZotBib.events_id.push(ids);
 			}
 
-			Zotero.debug(Zotero.AutoZotBib.events_timestamp.join());
-			Zotero.debug("\n");
-			Zotero.debug(Zotero.AutoZotBib.events_type.join());
-			Zotero.debug("\n");
-			Zotero.debug(Zotero.AutoZotBib.events_id.join());
-			Zotero.debug("\n");
-			Zotero.debug("\n");
+			dp(Zotero.AutoZotBib.events_timestamp.join());
+			dp("\n");
+			dp(Zotero.AutoZotBib.events_type.join());
+			dp("\n");
+			dp(JSON.stringify(extraData));
+			dp("\n");
+			dp(Zotero.AutoZotBib.events_id.join());
+			dp("\n");
+			dp("\n");
 		}
 		
 		if (Zotero.AutoZotBib.timerRunning == false)
