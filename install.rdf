@@ -5,7 +5,7 @@
 	<Description about="urn:mozilla:install-manifest">
 		<em:id>autozotbib@rtwilson.com</em:id>
 		<em:name>Automatic Zotero to BibTeX exporter</em:name>
-		<em:version>0.5</em:version>
+		<em:version>0.51</em:version>
 		<em:description>A plugin to automatically export all Zotero records to a BibTeX file whenever records are updated.</em:description>
 		<em:creator>Robin Wilson</em:creator>
 		<em:homepageURL>http://www.rtwilson.com/academic/autozotbib</em:homepageURL>
