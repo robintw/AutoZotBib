@@ -68,18 +68,22 @@ var timerEvent = {
     if (diff > Zotero.AutoZotBib.DIFF_CLEAR_QUEUE && diff < Zotero.AutoZotBib.DIFF_STOP_TIMER && this.queueEmpty() == false)
     {
     	// Process queue, clear queue and process items
-    	var ids = Zotero.AutoZotBib.processQueue();
+    	var uniques = Zotero.AutoZotBib.processQueue();
 
     	dp("Clearing queue\n");
-    	Zotero.AutoZotBib.events_id.length = 0;
+    	// Zotero.AutoZotBib.events_id.length = 0;
+    	Zotero.AutoZotBib.authors.length = 0
+    	Zotero.AutoZotBib.years.length = 0
     	Zotero.AutoZotBib.events_type.length = 0;
     	Zotero.AutoZotBib.events_timestamp.length = 0;
 
     	dp("About to process items:\t");
-    	dp(ids);
+    	dp(uniques.authors);
     	dp("\n");
     	dp("----------------------------------------------------------------\n");
-    	Zotero.AutoZotBib.processItems(ids);
+    	Zotero.AutoZotBib.processItems(uniques.authors, uniques.years);
+
+
     }
     if (diff > Zotero.AutoZotBib.DIFF_STOP_TIMER)
     {
@@ -106,6 +110,9 @@ Zotero.AutoZotBib = {
 	events_id: [],
 	events_type: [],
 	events_timestamp: [],
+
+	authors: [],
+	years: [],
 
 	okToWriteToBibtex: true,
 	needToAppendStill: false,
@@ -134,13 +141,16 @@ Zotero.AutoZotBib = {
 
 	onShutdown: function() {
 		dp("\n######## We're about to shutdown - clear queue and process.\n\n");
-		// If Zotero shuts down we need to clear the queue
-		// and process it all - regardless of the timer
-		var ids = Zotero.AutoZotBib.processQueue();
-		this.events_id.length = 0;
-    	this.events_type.length = 0;
-    	this.events_timestamp.length = 0;
-    	Zotero.AutoZotBib.processItems(ids);
+    	// Process queue, clear queue and process items
+    	var uniques = Zotero.AutoZotBib.processQueue();
+
+    	// Zotero.AutoZotBib.events_id.length = 0;
+    	Zotero.AutoZotBib.authors.length = 0
+    	Zotero.AutoZotBib.years.length = 0
+    	Zotero.AutoZotBib.events_type.length = 0;
+    	Zotero.AutoZotBib.events_timestamp.length = 0;
+
+    	Zotero.AutoZotBib.processItems(uniques.authors, uniques.years);
 	},
 	
 	preferences: function(w) {
@@ -157,12 +167,12 @@ Zotero.AutoZotBib = {
   		// queue.
 
   		// First ensure all itemIDs are numbers (some weren't for some reason)
-  		this.events_id = this.events_id.map(function(x) {return Number(x);});
+  		//this.events_id = this.events_id.map(function(x) {return Number(x);});
 
   		// Get the unique ones
-  		unique_ids = this.uniqueElements(this.events_id);
+  		uniques = this.uniqueElementsAuthorYear(this.authors, this.years);
 
-  		return(unique_ids);
+  		return(uniques);
   	},
 
   	/*
@@ -242,6 +252,7 @@ Zotero.AutoZotBib = {
 	and year from the Bibtex file specified in the preferences
 	*/
   	removeBibtexEntries: function(authors, years) {
+  		dp("Inside removeBibTeXEntries")
   		this.okToWriteToBibtex = false;
 		var file = Components.classes["@mozilla.org/file/local;1"].
 	           createInstance(Components.interfaces.nsILocalFile);
@@ -264,9 +275,13 @@ Zotero.AutoZotBib = {
 		  // works for the final entry in the file
 		  fileString = fileString + "\n\n@REPLACETHIS"
 
+		  dp("Before for loop")
 		  // For every author and year given, remove those from the string
-		  for (i in authors)
+		  for (var i = 0; i < authors.length; i++)	
 		  {
+		  	dp("Removing:\n")
+		  	dp(authors[i])
+		  	dp("\n")
 		  	// Remove the BibTeX entry given as arguments to this function
 		  	// by using a regexp
 		  	fileString = fileString.replace(new RegExp('@[^@]+?author = \{(' + authors[i] + '),[^@]+?year = \{(' + years[i] + ')\}[^@]+?(?=@)','g'), "")
@@ -335,13 +350,60 @@ Zotero.AutoZotBib = {
 		this.exportItems(all_items, filename);
   	},
 
-  	// Returns just the unique elements from the array
+  	// Returns an array containing the elements
+  	// from arr at indices inds
+  	subset: function(arr, inds) {
+  		var newArr = []
+  		for (var i = 0; i < inds.length; i++)
+  		{
+  			newArr.push(arr[inds[i]]);
+  		}
+  		return newArr;
+  	},
+
+  	// Returns just the unique elements from the array for AUTHORs and YEARs
+  	// Taken from http://net.tutsplus.com/tutorials/javascript-ajax/javascript-from-null-utility-functions-and-debugging/
+  	uniqueElementsAuthorYear: function(authors, years) {
+  	var joinedArr = []
+    var newAuthors = []
+    var newYears = []
+  	for (var i = 0; i < authors.length; i++)
+  	{
+  		joinedArr.push(authors[i] + "," + years[i])
+  	}
+    var newArr = [],
+    	origLen = joinedArr.length,
+        found,
+        x, y;
+    for ( x = 0; x < origLen; x++ ) {
+        found = undefined;
+        for ( y = 0; y < newArr.length; y++ ) {
+            if ( joinedArr[x] === newArr[y] ) {
+              found = true;
+              break;
+            }
+        }
+        if ( !found) {
+        	newArr.push( joinedArr[x] );
+        }
+    }
+   for (var i = 0; i < newArr.length; i++)
+    {
+      spl = newArr[i].split(",")
+      newAuthors.push(spl[0])
+      newYears.push(spl[1])
+    }
+   return {authors:newAuthors, years:newYears};
+   },
+
+   // Returns just the unique elements from the array
   	// Taken from http://net.tutsplus.com/tutorials/javascript-ajax/javascript-from-null-utility-functions-and-debugging/
   	uniqueElements: function(origArr) {
     var newArr = [],
         origLen = origArr.length,
         found,
         x, y;
+    var indices = []
     for ( x = 0; x < origLen; x++ ) {
         found = undefined;
         for ( y = 0; y < newArr.length; y++ ) {
@@ -350,34 +412,34 @@ Zotero.AutoZotBib = {
               break;
             }
         }
-        if ( !found) newArr.push( origArr[x] );
+        if ( !found) {
+        	newArr.push( origArr[x] );
+        	indices.push(x);
+        }
     }
-   return newArr;
+   return {unique: newArr, indices: indices};
    },
 	
-	processItems: function(ids) {
+	processItems: function(authors, years) {
 		// Processes items that have changed (add/modify/delete)
 		dp("In processItems\n");
-		var authors = [];
-		var years = [];
+		// var authors = [];
+		// var years = [];
 
-		dp("IDs:\t");
-		dp(ids);
-		dp("\n");
-		// Get authors and years from the ids
-		for (i in ids)
-		{
-			// Get the item
-			var item = Zotero.Items.get(ids[i]);
-			// Get the author
-			var creators = item.getCreators();
-			authors.push(creators[0].ref.lastName);
+		// // Get authors and years from the ids
+		// for (i in ids)
+		// {
+		// 	// Get the item
+		// 	var item = Zotero.Items.get(ids[i]);
+		// 	// Get the author
+		// 	var creators = item.getCreators();
+		// 	authors.push(creators[0].ref.lastName);
 
-			// Get the year
-			var date_str = item.getField('date');
-			var date_obj = Zotero.Date.strToDate(date_str);
-			years.push(date_obj.year);
-		}
+		// 	// Get the year
+		// 	var date_str = item.getField('date');
+		// 	var date_obj = Zotero.Date.strToDate(date_str);
+		// 	years.push(date_obj.year);
+		// }
 
 		dp(authors);
 		dp("\n");
@@ -392,14 +454,18 @@ Zotero.AutoZotBib = {
 
 		// Search Zotero library for items with those authors and years
 		// (each call to searchItems does it for one author/year combo,
-		// run many times and join results - then remove any duplicates)		
-		for (i in authors)
+		// run many times and join results - then remove any duplicates)	
+		for (var i = 0; i < authors.length; i++)
 		{
 			var author = authors[i];
 			var year = years[i];
 
 			var results = this.searchItems(author, year);
-
+			dp("Searching for ")
+			dp(author)
+			dp(", ")
+			dp(year)
+			dp("\n")
 			if (results == false)
 			{
 				continue;
@@ -408,7 +474,9 @@ Zotero.AutoZotBib = {
 			this.search_results = this.search_results.concat(results);
 		}
 
-		this.search_results = this.uniqueElements(this.search_results);
+		res = this.uniqueElements(this.search_results)
+
+		this.search_results = this.subset(this.search_results, res.indices)
 
 		dp("All search results are:\t");
 		dp(this.search_results);
@@ -472,24 +540,59 @@ Zotero.AutoZotBib = {
 			Zotero.AutoZotBib.events_timestamp.push(secs);
 			Zotero.AutoZotBib.events_type.push(event);
 
-			if (ids.length > 1)
-			{
-				Zotero.AutoZotBib.events_id.concat(ids);
-			}
-			else
-			{
-				Zotero.AutoZotBib.events_id.push(ids);
-			}
+			// if (ids.length > 1)
+			// {
+			// 	Zotero.AutoZotBib.events_id.concat(ids);
+			// }
+			// else
+			// {
+			// 	Zotero.AutoZotBib.events_id.push(ids);
+			// }
 
-			dp(Zotero.AutoZotBib.events_timestamp.join());
-			dp("\n");
+			// dp(Zotero.AutoZotBib.events_timestamp.join());
+			dp("Type is: \n");
 			dp(Zotero.AutoZotBib.events_type.join());
 			dp("\n");
-			dp(JSON.stringify(extraData));
+			// dp("\n");
+			// dp(JSON.stringify(extraData));
+			// dp("\n");
+			// dp(Zotero.AutoZotBib.events_id.join());
+			// dp("\n");
+			// dp("\n");
+
+			var changes = extraData[ids[0]].changed;
+			dp(JSON.stringify(changes));
 			dp("\n");
-			dp(Zotero.AutoZotBib.events_id.join());
+			dp(typeof changes);
 			dp("\n");
+			dp(changes.prototype.toString);
 			dp("\n");
+
+			// Get authors and years from the ids
+			for (i in ids)
+			{
+				// Get the item
+				var item = Zotero.Items.get(ids[i]);
+				// Get the author
+				var creators = item.getCreators();
+				Zotero.AutoZotBib.authors.push(creators[0].ref.lastName);
+
+				// Get the year
+				var date_str = item.getField('date');
+				var date_obj = Zotero.Date.strToDate(date_str);
+				Zotero.AutoZotBib.years.push(date_obj.year);
+
+				// Check the associated extraData
+				// if the creators or date has changed then
+				// add the old ones as well
+				var changes = extraData[i];
+
+			}
+			dp("Authors then years:\n")
+			dp(Zotero.AutoZotBib.authors);
+			dp("\n");
+			dp(Zotero.AutoZotBib.years);
+
 		}
 		
 		if (Zotero.AutoZotBib.timerRunning == false)
